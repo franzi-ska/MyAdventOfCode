@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Callable
 
@@ -13,8 +14,13 @@ class Instruction:
 
 class IntcodeComputer:
     def __init__(self, intcode: List[int], debug=False, pause_on_output=False):
-        self.memory = intcode
+
+        self.memory = defaultdict(lambda: 0)
+        for idx, value in enumerate(intcode):
+            self.memory[idx] = value
+
         self.pointer = 0
+        self.relative_base = 0
         self.program_finished = False
         self.program_paused = False
 
@@ -34,35 +40,31 @@ class IntcodeComputer:
             6: Instruction(self._operation_jump_if_false, 2),
             7: Instruction(self._operation_less_than, 3),
             8: Instruction(self._operation_equals, 3),
+            9: Instruction(self._operation_adjust_relative_base, 1),
             99: Instruction(self._operation_halt, 0)
         }
 
     def __str__(self):
         st = ''
-        for p in ["memory", "pointer", "input_list", "output_list"]:
+        for p in ["memory", "pointer", "relative_base", "input_list", "output_list"]:
             st += f'{p}:\t{getattr(self, p)}\n'
         return st
 
     def run(self):
         self.program_paused = False
-        count = 0
         while not self.program_finished:
             instruction = self.memory[self.pointer]
             opcode, modes = self.decode_instruction(instruction)
 
             if self.debug:
-                print('\n', 'Clock', count)
-                print(self)
+                print(self, '\n')
 
             operation = self._instructions[opcode]
-
             if operation.n_args > 0:
-                args = self.memory[self.pointer+1: self.pointer+operation.n]
+                args = [self.memory[i] for i in range(self.pointer+1, self.pointer+operation.n)]
                 operation.method(args, modes)
             else:
                 operation.method()
-
-            count +=1
 
             if self.program_paused:
                 break
@@ -89,31 +91,50 @@ class IntcodeComputer:
         return opcode, parameter_modes
 
     def get_immediate_value(self, value_in, mode):
-        if mode:
+        if mode == 1:
             # immediate mode (mode == 1)
             value_out = value_in
-        else:
+        elif mode == 0:
             # position mode (mode == 0)
             value_out = self.memory[value_in]
+        elif mode == 2:
+            # relative mode
+            position = value_in + self.relative_base
+            value_out = self.memory[position]
+        else:
+            raise ValueError(f"Invalide mode: {mode}")
+
         return value_out
 
+    def get_index(self, index_in, mode):
+        if mode == 0:
+            # position mode
+            index_out = index_in
+        elif mode == 2:
+            # relative mode
+            index_out = self.relative_base + index_in
+        else:
+            raise ValueError(f"Invalide mode: {mode}")
+
+        return index_out
+
     def _operation_add(self, args, modes):
-        src0, src1, dst = args
-        src0 = self.get_immediate_value(src0, modes[0])
-        src1 = self.get_immediate_value(src1, modes[1])
+        src0 = self.get_immediate_value(args[0], modes[0])
+        src1 = self.get_immediate_value(args[1], modes[1])
+        dst = self.get_index(args[2], modes[2])
         self.set_value(dst, src0 + src1)
         self.move_pointer(4)
 
     def _operation_multiply(self, args, modes):
-        src0, src1, dst = args
-        src0 = self.get_immediate_value(src0, modes[0])
-        src1 = self.get_immediate_value(src1, modes[1])
+        src0 = self.get_immediate_value(args[0], modes[0])
+        src1 = self.get_immediate_value(args[1], modes[1])
+        dst = self.get_index(args[2], modes[2])
         self.set_value(dst, src0 * src1)
         self.move_pointer(4)
 
     def _operation_input(self, args, modes):
         current_input = self.input_list[self.next_input]
-        dst = args[0]
+        dst = self.get_index(args[0], modes[0])
         self.set_value(dst, current_input)
         self.next_input += 1
         self.move_pointer(2)
@@ -147,17 +168,22 @@ class IntcodeComputer:
     def _operation_less_than(self, args, modes):
         value0 = self.get_immediate_value(args[0], modes[0])
         value1 = self.get_immediate_value(args[1], modes[1])
-        dst = args[2]
+        dst = self.get_index(args[2], modes[2])
         self.set_value(dst, int(value0 < value1))
         self.move_pointer(4)
 
     def _operation_equals(self, args, modes):
         value0 = self.get_immediate_value(args[0], modes[0])
         value1 = self.get_immediate_value(args[1], modes[1])
-        dst = args[2]
+        dst = self.get_index(args[2], modes[2])
         self.move_pointer(4)
 
         self.set_value(dst, int(value0 == value1))
+
+    def _operation_adjust_relative_base(self, args, modes):
+        value0 = self.get_immediate_value(args[0], modes[0])
+        self.relative_base += value0
+        self.move_pointer(2)
 
     def _operation_halt(self):
         self.program_finished = True
