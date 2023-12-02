@@ -1,6 +1,6 @@
 import json
 
-with open("C:\\Users\\Franziska\\PycharmProjects\\advent_of_code\\user_config.json") as f:
+with open("user_config.json") as f:
     json_str = f.read()
     json_dict = json.loads(json_str)
 
