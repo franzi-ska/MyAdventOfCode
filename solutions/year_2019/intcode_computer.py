@@ -12,14 +12,17 @@ class Instruction:
 
 
 class IntcodeComputer:
-    def __init__(self, intcode: List[int], debug=False):
+    def __init__(self, intcode: List[int], debug=False, pause_on_output=False):
         self.memory = intcode
         self.pointer = 0
         self.program_finished = False
+        self.program_paused = False
+
         self.input_list = []
         self.next_input = 0
         self.output_list = []
 
+        self.pause_on_output = pause_on_output
         self.debug = debug
 
         self._instructions = {
@@ -41,6 +44,7 @@ class IntcodeComputer:
         return st
 
     def run(self):
+        self.program_paused = False
         count = 0
         while not self.program_finished:
             instruction = self.memory[self.pointer]
@@ -59,6 +63,9 @@ class IntcodeComputer:
                 operation.method()
 
             count +=1
+
+            if self.program_paused:
+                break
 
     def set_value(self, position, value):
         self.memory[position] = value
@@ -115,6 +122,9 @@ class IntcodeComputer:
         src = self.get_immediate_value(args[0], modes[0])
         self.output_list.append(src)
         self.move_pointer(2)
+        if self.pause_on_output:
+            self.program_paused = True
+
         if self.debug:
             print('Current output: ', self.output_list)
 
