@@ -29,6 +29,7 @@ class IntcodeComputer:
         self.output_list = []
 
         self.pause_on_output = pause_on_output
+        self.wait_for_input = False
         self.debug = debug
 
         self._instructions = {
@@ -52,6 +53,7 @@ class IntcodeComputer:
 
     def run(self):
         self.program_paused = False
+        self.wait_for_input = False
         while not self.program_finished:
             instruction = self.memory[self.pointer]
             opcode, modes = self.decode_instruction(instruction)
@@ -68,6 +70,9 @@ class IntcodeComputer:
 
             if self.program_paused:
                 return self.output_list[-1]
+
+            if self.wait_for_input:
+                return
 
     def set_value(self, position, value):
         self.memory[position] = value
@@ -133,11 +138,14 @@ class IntcodeComputer:
         self.move_pointer(4)
 
     def _operation_input(self, args, modes):
-        current_input = self.input_list[self.next_input]
-        dst = self.get_index(args[0], modes[0])
-        self.set_value(dst, current_input)
-        self.next_input += 1
-        self.move_pointer(2)
+        if len(self.input_list) > self.next_input:
+            current_input = self.input_list[self.next_input]
+            dst = self.get_index(args[0], modes[0])
+            self.set_value(dst, current_input)
+            self.next_input += 1
+            self.move_pointer(2)
+        else:
+            self.wait_for_input = True
 
     def _operation_output(self, args, modes):
         src = self.get_immediate_value(args[0], modes[0])
