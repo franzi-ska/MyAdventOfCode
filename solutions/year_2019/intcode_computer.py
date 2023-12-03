@@ -67,7 +67,7 @@ class IntcodeComputer:
                 operation.method()
 
             if self.program_paused:
-                break
+                return self.output_list[-1]
 
     def set_value(self, position, value):
         self.memory[position] = value
