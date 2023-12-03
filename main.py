@@ -15,8 +15,6 @@ if __name__ == '__main__':
         day = sys.argv[2]
         year = None
 
-
-
     else:
         day, year = None, None
 

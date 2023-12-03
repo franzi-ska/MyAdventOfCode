@@ -10,7 +10,7 @@ from utils_aoc.user_data import USER_TOKEN, USER_EMAIL, MAIN_DIR
 
 
 class AocDay:
-    def __init__(self, day:int = None, year= None):
+    def __init__(self, day: int = None, year=None):
         year, day = self.check_inputs(year, day)
         main_dir = os.path.join(MAIN_DIR, "solutions")
 
@@ -91,7 +91,6 @@ class AocDay:
         output_a = self.run_solution_function(input_str, "part_a")
         output_b = self.run_solution_function(input_str, "part_b")
         print(f'Part A:\t{output_a}\nPart B:\t{output_b}')
-
 
     def run_single_test(self, part, input_str, solution, test_idx=''):
         output = self.run_solution_function(input_str, part)
