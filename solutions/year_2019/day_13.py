@@ -75,13 +75,5 @@ def part_b(input_str: str):
     arcade = ArcadeCabinet(code)
     arcade.brain.set_value(0, 2)
     arcade.run()
-
-    n_blocks = sum([1 for value in arcade.screen.values() if value == 2])
-    print('Blocks remaining:', n_blocks)
-
     return arcade.score
 
-
-if __name__ == '__main__':
-    # For debugging
-    pass

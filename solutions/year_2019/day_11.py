@@ -55,8 +55,8 @@ def part_b(input_str: str):
     grid = dict(robot.grid_state)
 
     positions = grid.keys()
-    offsets = [0,0]
-    max_pos = [0,0]
+    offsets = [0, 0]
+    max_pos = [0, 0]
     for idx in range(2):
         pos = [p[idx] for p in positions]
         max_pos[idx] = max(pos)
@@ -64,13 +64,10 @@ def part_b(input_str: str):
     hull = [[' ' for i in range(max_pos[0] + 1)] for j in range(max_pos[1]+ 1)]
 
     for pos, paint in grid.items():
-        print(pos, offsets)
         hull[pos[1]-offsets[1]][pos[0]-offsets[0]] = 'X' if paint == 1 else ' '
 
     output = '\n'.join([''.join(line) for line in hull])
-    print('\n', output)
-
-    return None
+    return '\n' + output
 
 
 if __name__ == '__main__':
